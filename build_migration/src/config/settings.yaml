@@ -1,0 +1,113 @@
+# Конфигурационный файл, содержит в себе все необходимые изменяемые параметры
+
+SCRIPT_VERSION: "1.0"  
+# Версия приложения
+
+DATA_SOURCE_TYPE: "network"  
+# Тип источника данных: 'network' или 'usb'
+
+EXTNAME: "{EXTNAME}"
+# Хостнейм без FQDN (ранее вычислялось через os.uname()[1].split('.')[0])
+
+LOG_FILES: "/var/log/migration_log_{CURRENT_DATETIME}.log"  
+# Файл лога (ранее формировался через datetime.now().strftime)
+
+MOUNT_POINT: "/mnt"  
+# Точка монтирования сетевого хранилища
+
+MOUNT_ATTEMPTS: 3  
+# Количество попыток монтирования сетевого хранилища
+
+MOUNT_DELAY_TIME: 5  
+# Пауза между попытками монтирования сетевого хранилища
+
+TARGET_ROOT_BUFFER_FOLDER: "/home/temp"  
+# Корень временной директории на локальном компьютере
+
+STATE_FILE: "{MOUNT_POINT}/{EXTNAME}/migration_state.json"  
+# Файл-статус для отслеживания состояния работы приложения
+
+REPORT_DIRECTORY: "{MOUNT_POINT}/{EXTNAME}/"  
+# Путь для сохранения файла-отчета
+
+SOURCE_FOLDER: "/{EXTNAME}"  
+# Путь к исходной директории на сервере DFS
+
+TARGET_BUFFER_DIRECTORY: "{TARGET_ROOT_BUFFER_FOLDER}/{EXTNAME}"  
+# Временная директория на локальном компьютере для хранения исходных файлов
+
+SHORTCUTS_FILE_NAME: "links.txt"  
+# Имя файла с ярлыками
+
+PRINTERS_FILE_LIST: "{MOUNT_POINT}/{EXTNAME}/printers.lrs"  
+# Путь к файлу с информацией о принтерах
+
+CRED_FILE: "/tmp/.smbcred_#"  
+# Файл с кредами для подключения шары
+
+SECRET_KEY_PATH: "/tmp/secret.key"  
+# Путь к ключу шифрования
+
+HASH_MISMATCH_FILE: "{TARGET_BUFFER_DIRECTORY}/discrepancies.txt"  
+# Файл с информацией о несовпадении хеш-сумм
+
+DATABASE_PATH: "{MOUNT_POINT}/{EXTNAME}/file_hashes.db"
+# Путь к базе данных SQLite
+
+HASH_ALGORITHM: "sha256"  
+# Алгоритм сбора хеш-сумм (md, sha256)
+
+RETRIES_HASH_MATCH: 3  
+# Попытки сравнения хеш-сумм
+
+INTEGRITY_CHECK_METHOD: "hash"  
+# Метод проверки целостности файлов: 'hash', 'size' или 'metadata'
+
+
+# Данные сетевого хранилища
+CONNECTION:
+  type: "cifs"  
+  # Тип подключения: cifs
+
+  host: "//192.168.200.102/share"
+  # Адрес сервера DFS
+
+  base_path_mount: "{MOUNT_POINT}"  
+  # Точка монтирования на локальном компьютере
+
+  username: "Administrator"  
+  # Имя пользователя для подключения шары
+
+  password: "Admin123"
+  # Зашифрованный пароль для подключения сетевого хранилища
+
+  cred_file: "{CRED_FILE}"
+  # Файл для записи кредов
+
+
+EXCLUDE_DIRS:
+  # Список директорий, которые нужно исключить из миграции
+  - "extra_files"
+
+EXCLUDE_FILES:
+  # Список файлов/шаблонов, которые нужно исключить из миграции
+  - "links.txt"
+  - "*.sps"
+
+DOMAINS:
+  # Домены, при мультидоменной структуре
+  default: "corp.loc"
+  corp: "corp1.loc"
+
+# Дополнительные параметры для USB-накопителя
+USB_MOUNT_POINT: "/media/usb"      # Точка монтирования USB-накопителя
+USB_DEVICE_LABEL: "MIGRATION"      # Label для монтирования USB-накопителя
+USB_DEVICE_PATH: null              # None => автоматическое обнаружение устройства USB-накопителя
+
+# Параметры монтирования дополнительного жесткого диска
+NTFS_MOUNT_POINT: "/media/ntfs"
+
+#Параметры heartbeat
+HEARTBEAT_ENABLES: true
+HEARTBEAT_TIMEOUT: 120
+MONITORING_BASE_URL: "http://192.168.200.35:8080"
