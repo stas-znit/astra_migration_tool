@@ -71,7 +71,7 @@ def main():
     heartbeat.send_heartbeat("started", "global")
     try:
         # Очистка старых файлов состояния при запуске новой миграции
-        cleanup_old_state_files()
+        #cleanup_old_state_files()
 
         # Файл для сохранения несовпадений хэш-сумм
         mismatch_file = config["HASH_MISMATCH_FILE"]
@@ -153,6 +153,10 @@ def main():
                 try:
                     # Формирование имени пользователя для Linux
                     linux_user = format_username_for_linux(user)
+
+                    users_state = state.get("users", {})
+                    user_status = users_state.get(linux_user)
+
                     # Формирование пути к отчету о миграции данных
                     report_file_path = os.path.join(
                         config["REPORT_DIRECTORY"],
@@ -162,6 +166,11 @@ def main():
                     # Проверяем, что миграция для пользователя ещё не была выполнена
                     if state.get(linux_user) == "success":
                         logger.info(f"Миграция для пользователя {linux_user} уже выполнена. Пропуск.")
+                        users_completed += 1
+                        continue
+
+                    if user_status == "completed_with_error":
+                        logger.info(f"Миграция для пользователя {linux_user} была завершена с ошибками. Пропуск (можно настроить повтор).")
                         users_completed += 1
                         continue
                         
@@ -211,7 +220,7 @@ def main():
                     copy_skel(final_target_dir)
                     
                     # Проверяем, есть ли состояние предыдущей миграции
-                    if state.get(linux_user) == "in_progress":
+                    if user_status == "in_progress":
                         # Пытаемся возобновить миграцию
                         logger.info(f"Обнаружена незавершенная миграция для пользователя {linux_user}. Попытка возобновления.")
                         migration_success = resume_direct_migration(
@@ -220,8 +229,22 @@ def main():
                             username=linux_user,
                             report_data=report_data
                         )
+                    elif user_status == "failed":
+                        # Пользователь с ошибкой - можно настроить поведение
+                        logger.warning(f"Пользователь {linux_user} имел статус 'failed'. Запускаем миграцию заново.")
+                        update_user_state(linux_user, "in_progress")
+                        migration_success = direct_migrate(
+                            source_dir=user_dir, 
+                            target_dir=final_target_dir,
+                            exclude_dirs=config["EXCLUDE_DIRS"],
+                            exclude_files=config["EXCLUDE_FILES"],
+                            username=linux_user,
+                            report_data=report_data
+                        )
                     else:
-                        # Запускаем новую миграцию
+                        # Новая миграция (user_status is None или другое значение)
+                        logger.info(f"Запуск новой миграции для пользователя {linux_user}.")
+                        update_user_state(linux_user, "in_progress")
                         migration_success = direct_migrate(
                             source_dir=user_dir, 
                             target_dir=final_target_dir,
