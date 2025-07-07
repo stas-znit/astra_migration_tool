@@ -26,6 +26,7 @@ from src.notify.notify import send_status
 from src.notify.heartbeat import Heartbeat
 from src.errors.error_codes import MigrationErrorCodes
 from src.migration.state_tracker import handle_migration_error, get_error_summary
+from src.utils.debug_state import check_state_files, debug_migration_state
 # Настройка логгера
 logger = logging.getLogger(__name__)
 
@@ -108,6 +109,9 @@ def main():
                                 last_error={"code": "UNSUPPORTED_DATASOURCE", "message": f"Тип источника {data_source_type} не поддерживается"})
             heartbeat.send_heartbeat("error_UNSUPPORTED_DATASOURCE", "global")
             return
+        
+        # Проверка state файла
+        #check_state_files()
             
         # Проверяем, что исходная папка существует
         if not os.path.isdir(source_folder):
@@ -124,7 +128,8 @@ def main():
         
         # Обработка дополнительных дисков
         additional_disk_mapping = handle_additional_disks()
-
+        # Отладка
+        #state = debug_migration_state()
         # Получение списка пользователей из исходной папки
         users = get_users_from_host_dir(source_folder, config["EXCLUDE_DIRS"])
         # Получение статуса миграции пользователей
@@ -164,13 +169,13 @@ def main():
                     )
 
                     # Проверяем, что миграция для пользователя ещё не была выполнена
-                    if state.get(linux_user) == "success":
+                    if user_status == "success":
                         logger.info(f"Миграция для пользователя {linux_user} уже выполнена. Пропуск.")
                         users_completed += 1
                         continue
 
                     if user_status == "completed_with_error":
-                        logger.info(f"Миграция для пользователя {linux_user} была завершена с ошибками. Пропуск (можно настроить повтор).")
+                        logger.info(f"Миграция для пользователя {linux_user} была завершена с ошибками. Пропуск.")
                         users_completed += 1
                         continue
                         
