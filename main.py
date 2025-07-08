@@ -128,7 +128,7 @@ def main():
         
         # Обработка дополнительных дисков
         additional_disk_mapping = handle_additional_disks()
-        # Отладка
+        # Отладка файла состояни
         #state = debug_migration_state()
         # Получение списка пользователей из исходной папки
         users = get_users_from_host_dir(source_folder, config["EXCLUDE_DIRS"])
