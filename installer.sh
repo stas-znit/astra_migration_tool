@@ -25,8 +25,8 @@ if ! command -v python3 &> /dev/null; then
 fi
 
 if ! command -v pip3 &> /dev/null; then
-    echo "Pip не установлен. Установите pip для продолжения."
-    exit 1
+    echo "Pip не установлен. Попытка установки."
+    apt install python3-pip
 fi
 
 # Установка PyInstaller, если он не установлен

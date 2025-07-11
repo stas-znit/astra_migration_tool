@@ -1,8 +1,8 @@
-from config.config_loader import load_config
+from src.config.config_loader import load_config
 import json
 import os
 
-from migration.state_tracker import load_state
+from src.migration.state_tracker import load_state
 
 def check_state_files():
         

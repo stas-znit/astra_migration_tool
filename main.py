@@ -6,7 +6,7 @@ import threading
 import time
 import argparse
 import sys
-
+import signal
 
 from src.logging.logger import setup_logger
 from src.connection.dfs_connector import mount_dfs, umount_dfs, diagnose_mount_issues
@@ -30,6 +30,25 @@ from src.utils.debug_state import check_state_files, debug_migration_state
 # Настройка логгера
 logger = logging.getLogger(__name__)
 
+# Глобальная переменная для корректного завершения
+graceful_exit = False
+
+
+def signal_handler(signum, frame):
+    """Обработчик сигналов от супервизора"""
+    global graceful_exit
+    logger.info(f"Получен сигнал {signum} от супервизора. Корректное завершение...")
+    graceful_exit = True
+    
+    # Обновляем статус
+    try:
+        update_global_state(
+            status="stopping",
+            last_heartbeat=datetime.datetime.now().isoformat()
+        )
+    except:
+        pass
+
 # Функция для обновления last_heartbeat
 def heartbeat_thread(stop_event, interval=30):
     # Поток для обновления last_heartbeat
@@ -41,7 +60,12 @@ def main():
     """
     Основная функция для выполнения миграции данных с сетевого хранилища на локальную машину.
     """
+    global graceful_exit
+    
+    signal.signal(signal.SIGTERM, signal_handler)
+    signal.signal(signal.SIGINT, signal_handler)
     setup_logger()
+
     logger = logging.getLogger(__name__)
 
     # ------------------- Парсер аргументов -------------------
@@ -155,6 +179,10 @@ def main():
 
         try:
             for user in users:
+                if graceful_exit:
+                    logger.info("Получен сигнал завершения. Прерываем миграцию.")
+                    update_global_state(status="interrupted")
+                    break
                 try:
                     # Формирование имени пользователя для Linux
                     linux_user = format_username_for_linux(user)

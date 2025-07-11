@@ -1,0 +1,28 @@
+# /etc/systemd/system/migration-supervisor.service
+
+[Unit]
+Description=Simple Migration Supervisor
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/python3 /opt/migration/migration_supervisor.py
+ExecStop=/opt/migration/migration_supervisor.py stop
+
+
+Restart=no
+
+User=root
+Group=root
+
+# Ограничения
+MemoryLimit=1G
+CPUQuota=30%
+
+# Логирование
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=migration-supervisor
+
+[Install]
+WantedBy=multi-user.target
